@@ -2,7 +2,13 @@
 
 SharpStitch is a simple command line tool to stitch two images together.
 
-**Original usecase**: When I was selling Pokemon cards on CardMarket, I needed a way to quickly stitch two photos of the front and back of the card together into one image. I coudln't find a fast solution to do it so I just made this tool.
+*I can't test on a Linux or OSX machine at the moment, so I will only provide a x64 windows binary (see releases). The code should run on other systems as there is no platform specific code here. Ensure you have .NET 8 installed, cd to the src directory and run:*
+
+`dotnet run -- -i C:\Users\Turtle\Desktop\test`
+
+---
+
+**Original usecase**: When I was selling Pokemon cards on CardMarket, I needed a way to quickly stitch two photos of the front and back of the card together into one image. I coudln't find a fast solution to do it automatically to 100 images so I just made this tool.
 
 ![Stitched image example](media/front_back.jpg "Stitched")
 
