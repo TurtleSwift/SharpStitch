@@ -1,4 +1,3 @@
-using System.Reflection;
 using MetadataExtractor;
 using MetadataExtractor.Formats.Exif;
 using Microsoft.Extensions.Hosting;
@@ -28,34 +27,21 @@ internal class MainAppService : IHostedService
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
-    {
-        if (!AppOptionsValidator.ValidateOptions(options, logger))
-        {
-            hostApplicationLifetime.StopApplication();
-            return Task.CompletedTask;
-        }
+    {        
+        // create list of images to stitch
+        var imagePaths = new List<string>();
 
-        var outputPath = GetOutputPathAndEnsureExists();
-        var processOptions = new ImageProcessOptions 
-        {
-            Rotate = options.Rotation,
-            Scale = options.Scale,
-            SavedImageExtension = options.Encoding,
-            BorderSize = options.BorderSize
-        };
-
-        //first and second image provided, just stitch them
         if (options.Files?.Count() > 1)
         {
-            var fileList = options.Files.ToList();
-            imageProcessor.StitchImages(fileList[0], fileList[1], outputPath, processOptions);
+            // list provided directly
+            imagePaths = options.Files.ToList();
         }
-        //stitch multiple images from input path
         else if (!string.IsNullOrEmpty(options.InputPath))
         {
+            // directory provided, fetch files and sort
             var dirInfo = new DirectoryInfo(options.InputPath);
             var imageFiles = dirInfo.GetFiles($"*.{options.Encoding}");
-            
+
             var imageFilesSorted = (options.StitchOrderMethod switch
             {
                 StitchOrder.ByName => imageFiles.OrderBy(fi => fi.Name),
@@ -64,13 +50,34 @@ internal class MainAppService : IHostedService
                 _ => throw new NotSupportedException($"Selection method {options.StitchOrderMethod} not supported.")
             }).ToList();
 
-            for (int i = 0; i < imageFilesSorted.Count - 1; i += 2)
-                imageProcessor.StitchImages(imageFilesSorted[i].FullName, imageFilesSorted[i+1].FullName, outputPath, processOptions);
+            imagePaths = imageFilesSorted.Select(fi => fi.FullName).ToList();
         }
-        else
+
+        // get number images to stitch
+        var stitchCountPerImage = options.TakeImageCount is not null ? (int) options.TakeImageCount : imagePaths.Count();
+
+        // validate input
+        if (!AppOptionsValidator.ValidateOptions(options, logger, stitchCountPerImage))
         {
-            logger.LogError("An input path must be provided. Either provide two input images or an input directory.");
+            hostApplicationLifetime.StopApplication();
+            return Task.CompletedTask;
         }
+
+        // set options and stitch
+        var outputPath = GetOutputPathAndEnsureExists();
+        var (Columns, Rows) = options.GetNumOfColumnsAndRows(stitchCountPerImage);
+        var processOptions = new ImageProcessOptions 
+        {
+            Rotate = (int) options.Rotation,
+            Scale = options.Scale,
+            SavedImageExtension = options.Encoding,
+            BorderSize = (int) options.BorderSize,
+            Columns = Columns,
+            Rows = Rows
+        };
+
+        for (int i = 0; i < imagePaths.Count - 1; i += stitchCountPerImage)
+            imageProcessor.StitchImages(imagePaths.Skip(i).Take(stitchCountPerImage).ToArray(), outputPath, processOptions);
 
         logger.LogInformation("Done.");
 
