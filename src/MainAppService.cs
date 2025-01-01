@@ -68,10 +68,10 @@ internal class MainAppService : IHostedService
         var (Columns, Rows) = options.GetNumOfColumnsAndRows(stitchCountPerImage);
         var processOptions = new ImageProcessOptions 
         {
-            Rotate = (int) options.Rotation,
+            Rotate = options.Rotation,
             Scale = options.Scale,
             SavedImageExtension = options.Encoding,
-            BorderSize = (int) options.BorderSize,
+            BorderSize = options.BorderSize,
             Columns = Columns,
             Rows = Rows
         };

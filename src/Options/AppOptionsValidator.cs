@@ -14,10 +14,12 @@ static class AppOptionsValidator
             errors.Add("An input path must be provided. Either provide at least two input images or an input directory.");
         if (imageCount == 1)
             errors.Add("Image count should be larger than 1.");
-        if (appOptions.Rotation > 359)
+        if (appOptions.Rotation < 0 || appOptions.Rotation > 359)
             errors.Add("Rotation should be between 0 and 359.");
         if (appOptions.Scale < 0.1f || appOptions.Scale > 2.0f)
             errors.Add("Scale should be between 0.1 and 2.0.");
+        if (appOptions.BorderSize < 0)
+            errors.Add("Border size should be 0 or larger.");
         if (wXh.Rows < 1)
             errors.Add("Height should be at least 1.");
         if (wXh.Columns < 1)
